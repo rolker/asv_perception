@@ -38,7 +38,7 @@ namespace {
   }
 
   sensor_msgs::PointCloud2 radarsegment_to_pointcloud( 
-    const asv_perception_common::RadarSegment& segment, 
+    const marine_msgs::RadarSectorStamped& segment, 
     const float angle_offset, 
     const std::uint8_t min_intensity,
     const std::string& frame_id
@@ -46,29 +46,29 @@ namespace {
 
     pointcloud_type cloud = {};
 
-    for ( const auto& spoke : segment.spokes ) {
+    for ( const auto& spoke : segment.sector.scanlines) {
     
         const float
             angle = spoke.angle + angle_offset,  // - 270, // correct for orientation forward
             angle_sin = std::sin(angle * M_PI/180.0),
             angle_cos = std::cos(angle * M_PI/180.0),
-            max_range = spoke.max_range
+            max_range = spoke.range
             ;
-        const int pixels_in_spoke = spoke.data.size();
+        const int pixels_in_spoke = spoke.intensities.size();
 
         // ROS_WARN("spoke angle %s, range %s", std::to_string( angle ).c_str(), std::to_string(max_range).c_str() );
 
         for ( int i = 0; i < pixels_in_spoke; ++i ) {
 
             // min intensity check
-            if ( spoke.data[i] < min_intensity )
+            if ( spoke.intensities[i] < min_intensity )
                 continue;
 
             point_type point = {};
             point.x = max_range * float(i)/float(pixels_in_spoke-1) * angle_sin;
             point.y = max_range * float(i)/float(pixels_in_spoke-1) * angle_cos;
             point.z = 0.0;
-            point.intensity=float(spoke.data[i]);
+            point.intensity=float(spoke.intensities[i]);
             cloud.push_back(point);
         } // for
     } // for
@@ -111,9 +111,10 @@ void RadarToPointCloudNodelet::onInit ()
 //////////////////////////////////////////////////////////////////////////////////////////////
 void RadarToPointCloudNodelet::subscribe ()
 {
+  ROS_INFO_STREAM("hello?");
   lock_type_ lg( this->mtx_ );
 
-  this->sub_ = pnh_->subscribe<asv_perception_common::RadarSegment> (
+  this->sub_ = pnh_->subscribe<marine_msgs::RadarSectorStamped> (
     TOPIC_NAME_INPUT
     , 100
     , bind (&RadarToPointCloudNodelet::sub_callback, this, _1 )
@@ -128,7 +129,7 @@ void RadarToPointCloudNodelet::unsubscribe ()
 }
 
 void RadarToPointCloudNodelet::sub_callback (
-      const asv_perception_common::RadarSegment::ConstPtr& segment
+      const marine_msgs::RadarSectorStamped::ConstPtr& segment
 )
 {
   
@@ -149,9 +150,9 @@ void RadarToPointCloudNodelet::sub_callback (
       while ( ::sum_of_angles( this->segments_ ) > 360.f )
         this->segments_.pop_front();
 
-      assert( segment->spokes.size() > 0 );
+      assert( segment->sector.scanlines.size() > 0 );
 
-      const auto current_angle = std::abs(segment->spokes[0].angle);
+      const auto current_angle = std::abs(segment->sector.scanlines[0].angle);
       this->segments_.emplace_back( std::move(pc_current), current_angle ); // pc_current moved
 
       // are we at crossover point?  assumes input radar segments are clockwise

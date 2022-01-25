@@ -10,7 +10,7 @@
 #include <deque>
 #include <ros/ros.h>
 #include <pcl_ros/pcl_nodelet.h>
-#include <asv_perception_common/RadarSegment.h>
+#include <marine_msgs/RadarSectorStamped.h>
 
 #include "defs.h"
 
@@ -53,7 +53,7 @@ namespace obstacle_id
       void unsubscribe () override;
 
       // the callback function to handle input from subscription
-      void sub_callback ( const asv_perception_common::RadarSegment::ConstPtr& );
+      void sub_callback ( const marine_msgs::RadarSectorStamped::ConstPtr& );
       
     private:
 

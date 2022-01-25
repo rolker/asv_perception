@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   sensor_msgs
   nmea_msgs
+  marine_msgs
   rospy
   roscpp
   nodelet
