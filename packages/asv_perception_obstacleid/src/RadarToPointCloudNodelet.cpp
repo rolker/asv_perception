@@ -49,7 +49,7 @@ namespace {
     for ( const auto& spoke : segment.sector.scanlines) {
     
         const float
-            angle = spoke.angle + angle_offset,  // - 270, // correct for orientation forward
+            angle = 90 - spoke.angle + angle_offset,  // correct for orientation forward
             angle_sin = std::sin(angle * M_PI/180.0),
             angle_cos = std::cos(angle * M_PI/180.0),
             max_range = spoke.range
@@ -66,7 +66,7 @@ namespace {
 
             point_type point = {};
             point.x = max_range * float(i)/float(pixels_in_spoke-1) * angle_sin;
-            point.y = max_range * float(i)/float(pixels_in_spoke-1) * angle_cos;
+            point.y = max_range * float(i)/float(pixels_in_spoke-1) * -angle_cos;
             point.z = 0.0;
             point.intensity=float(spoke.intensities[i]);
             cloud.push_back(point);
@@ -111,7 +111,6 @@ void RadarToPointCloudNodelet::onInit ()
 //////////////////////////////////////////////////////////////////////////////////////////////
 void RadarToPointCloudNodelet::subscribe ()
 {
-  ROS_INFO_STREAM("hello?");
   lock_type_ lg( this->mtx_ );
 
   this->sub_ = pnh_->subscribe<marine_msgs::RadarSectorStamped> (
@@ -150,31 +149,33 @@ void RadarToPointCloudNodelet::sub_callback (
       while ( ::sum_of_angles( this->segments_ ) > 360.f )
         this->segments_.pop_front();
 
-      assert( segment->sector.scanlines.size() > 0 );
+      //assert( segment->sector.scanlines.size() > 0 ); 
+      if ( segment->sector.scanlines.size() > 0) {
 
-      const auto current_angle = std::abs(segment->sector.scanlines[0].angle);
-      this->segments_.emplace_back( std::move(pc_current), current_angle ); // pc_current moved
+        const auto current_angle = std::abs(segment->sector.scanlines[0].angle);
+        this->segments_.emplace_back( std::move(pc_current), current_angle ); // pc_current moved
 
-      // are we at crossover point?  assumes input radar segments are clockwise
-      const bool at_crossover = ( ( this->segments_.size() > 1 ) && ( ( current_angle - this->segments_[this->segments_.size()-2].second ) < 0.f ) );
+        // are we at crossover point?  assumes input radar segments are clockwise
+        const bool at_crossover = ( ( this->segments_.size() > 1 ) && ( ( current_angle - this->segments_[this->segments_.size()-2].second ) < 0.f ) );
 
-      // pointcloud concat
-      sensor_msgs::PointCloud2 result = {};
-      for ( auto& pc_pair : this->segments_ ) {
-        auto& pc = pc_pair.first;
-        if ( ( pc.width > 0 ) && !pcl::concatenatePointCloud( result, pc, result ) )
-          ROS_ERROR("Error concatenating point clouds");
+        // pointcloud concat
+        sensor_msgs::PointCloud2 result = {};
+        for ( auto& pc_pair : this->segments_ ) {
+          auto& pc = pc_pair.first;
+          if ( ( pc.width > 0 ) && !pcl::concatenatePointCloud( result, pc, result ) )
+            ROS_ERROR("Error concatenating point clouds");
+        }
+        
+        // use latest header
+        result.header = this->segments_.back().first.header;
+
+        if ( this->pub_full_current_.getNumSubscribers() > 0 )
+          this->pub_full_current_.publish( result );
+        
+        // print 'full' if at crossover point
+        if ( at_crossover && ( this->pub_full_.getNumSubscribers() > 0 ) )
+          this->pub_full_.publish( result );
       }
-      
-      // use latest header
-      result.header = this->segments_.back().first.header;
-
-      if ( this->pub_full_current_.getNumSubscribers() > 0 )
-        this->pub_full_current_.publish( result );
-      
-      // print 'full' if at crossover point
-      if ( at_crossover && ( this->pub_full_.getNumSubscribers() > 0 ) )
-        this->pub_full_.publish( result );
 
     }
 
