@@ -23,7 +23,7 @@ def construct_RotationMatrixHomogenous(rotation_angles):
 # https://en.wikipedia.org/wiki/Rotation_matrix
 def getRotationMatrixManual(rotation_angles):
     
-    rotation_angles = map(lambda x : np.deg2rad(x), rotation_angles)
+    rotation_angles = list(map(lambda x : np.deg2rad(x), rotation_angles))
     
     phi         = rotation_angles[0] # around x
     gamma       = rotation_angles[1] # around y
@@ -66,7 +66,7 @@ def getPoints_for_PerspectiveTranformEstimation(ptsIn, ptsOut, W, H, sidelength)
     ptsOut2Dlist =  []
     ptsIn2Dlist  =  []
     
-    for i in xrange(0,4):
+    for i in range(0,4):
         ptsOut2Dlist.append([ptsOut2D[i,0], ptsOut2D[i,1]])
         ptsIn2Dlist.append([ptsIn2D[i,0], ptsIn2D[i,1]])
     

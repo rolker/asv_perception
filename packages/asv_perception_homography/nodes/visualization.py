@@ -42,7 +42,7 @@ class homography_visualization( NodeLazy ):
         # subscribers; approximate time sync seems to fail when restarting a rosbag; just use latest of each msg
 
         # rgb
-        self.subs.append( rospy.Subscriber( "~rgb", CompressedImage, self.cb_rgb, queue_size=1, buff_size=2**24 ) )
+        self.subs.append( rospy.Subscriber( "~rgb", Image, self.cb_rgb, queue_size=1, buff_size=2**24 ) )
 
         # radar image
         self.subs.append( rospy.Subscriber( "~radarimg", Image, self.cb_radar, queue_size=1, buff_size=2**24 ) )

@@ -6,9 +6,9 @@ Authors:  Tom Clunie <clunietp@gmail.com>
 """
 
 # Tkinter-based python tuner
-#import tkinter as tk  # python 3.x
-import Tkinter as tk
-import tkMessageBox as messagebox
+import tkinter as tk  # python 3.x
+#import Tkinter as tk
+import tkinter as messagebox
 
 #create window & frames
 class Tuner:

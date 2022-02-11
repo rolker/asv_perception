@@ -18,14 +18,14 @@ class NodeLazy(object):
             self.state = dict()
 
         def peer_subscribe(self, topic_name, topic_publish, peer_publish):
-            if not True in self.state.itervalues():
+            if not True in self.state.items():
                 self.state[topic_name]=True
                 self.cb_subscribe()
 
         def peer_unsubscribe(self, topic_name, num_peers):
             if num_peers < 1: # zero subscriptions to at least 1 topic
                 self.state[topic_name] = False
-                if not True in self.state.itervalues():
+                if not True in self.state.items():
                     self.cb_unsubscribe()
 
     # subscribelistener/state object
